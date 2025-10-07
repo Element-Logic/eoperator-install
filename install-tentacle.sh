@@ -2,10 +2,11 @@
 set -euo pipefail
 
 # ===== Configuration via .env (optional) =====
-# If a .env file exists in the same directory, source it.
 if [[ -f ".env" ]]; then
-  # shellcheck disable=SC2046
-  export $(grep -vE '^\s*#' .env | xargs -d '\n' -I {} echo {})
+  set -a                    # auto-export all variables defined from now on
+  # shellcheck disable=SC1091
+  . ./.env                  # source .env (respects quotes and spaces)
+  set +a
 fi
 
 # ===== Required variables (can also be set as environment variables) =====
@@ -38,7 +39,7 @@ if ! command -v tentacle >/dev/null 2>&1; then
   # Official repo package name is 'tentacle'
   # If the repo is already configured, this is enough:
   sudo apt-get update -y
-  sudo apt-get install -y tentacle || {
+  sudo apt-get install -y Tentacle || {
     echo "E: 'tentacle' package not found via default repos."
     echo "   If needed, add the Octopus repo per official docs, then re-run:"
     echo "   https://octopus.com/docs/infrastructure/deployment-targets/tentacle/linux"
@@ -54,32 +55,32 @@ CONFIG_FILE="${CONFIG_DIR}/tentacle.config"
 
 if [[ ! -f "$CONFIG_FILE" ]]; then
   echo "==> Creating new Tentacle instance: ${TENTACLE_INSTANCE}"
-  sudo tentacle create-instance \
+  sudo Tentacle create-instance \
     --instance "${TENTACLE_INSTANCE}" \
     --config "${CONFIG_FILE}" \
     --console
 
   if [[ "${CREATE_NEW_CERT}" == "true" ]]; then
-    sudo tentacle new-certificate \
+    sudo Tentacle new-certificate \
       --instance "${TENTACLE_INSTANCE}" \
       --if-blank \
       --console
   fi
 
   sudo mkdir -p "${APP_DIR}"
-  sudo tentacle configure \
+  sudo Tentacle configure \
     --instance "${TENTACLE_INSTANCE}" \
     --app "${APP_DIR}" \
     --noListen "True" \
     --console
 
   # Polling comms (active) to Server
-  sudo tentacle configure \
+  sudo Tentacle configure \
     --instance "${TENTACLE_INSTANCE}" \
     --trust "https://dummy.invalid" >/dev/null 2>&1 || true  # noop to ensure key exists
 else
   echo "==> Instance '${TENTACLE_INSTANCE}' already exists. Updating configuration…"
-  sudo tentacle configure \
+  sudo Tentacle configure \
     --instance "${TENTACLE_INSTANCE}" \
     --app "${APP_DIR}" \
     --noListen "True" \
@@ -88,7 +89,7 @@ fi
 
 if [[ "${RESET_TRUST}" == "true" ]]; then
   echo "==> Resetting trust to avoid stale thumbprints…"
-  sudo tentacle configure \
+  sudo Tentacle configure \
     --instance "${TENTACLE_INSTANCE}" \
     --reset-trust \
     --console
@@ -97,7 +98,7 @@ fi
 # ===== Register with Octopus =====
 echo "==> Registering with Octopus (polling) …"
 # Use --force so the registration is idempotent (safe to re-run)
-sudo tentacle register-with \
+sudo Tentacle register-with \
   --instance "${TENTACLE_INSTANCE}" \
   --server "${OCTOPUS_SERVER_URL}" \
   --apiKey "${OCTOPUS_API_KEY}" \
@@ -113,15 +114,15 @@ sudo tentacle register-with \
 # ===== Install/Start service =====
 if [[ "${AUTO_START}" == "true" ]]; then
   echo "==> Installing and starting Tentacle service…"
-  sudo tentacle service --instance "${TENTACLE_INSTANCE}" --install --console
-  sudo tentacle service --instance "${TENTACLE_INSTANCE}" --start --console
+  sudo Tentacle service --instance "${TENTACLE_INSTANCE}" --install --console
+  sudo Tentacle service --instance "${TENTACLE_INSTANCE}" --start --console
   sudo systemctl enable "Tentacle@${TENTACLE_INSTANCE}.service" >/dev/null 2>&1 || true
 fi
 
 # ===== Show configuration for verification =====
 echo
 echo "==> Current configuration (JSON):"
-sudo tentacle show-configuration --instance="${TENTACLE_INSTANCE}" | sed 's/API-[-A-Z0-9]*/API-REDACTED/g'
+sudo Tentacle show-configuration --instance="${TENTACLE_INSTANCE}" | sed 's/API-[-A-Z0-9]*/API-REDACTED/g'
 
 echo
 echo "✅ Done. Verify the target appears in Octopus: Infrastructure → Deployment targets."
