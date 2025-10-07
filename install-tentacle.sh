@@ -33,6 +33,29 @@ echo "==> App dir:        $APP_DIR"
 echo "==> Comms port:     $SERVER_COMMS_PORT"
 echo
 
+# ===== Functions =====
+apt_has_octopus() {
+  if apt-cache policy 2>/dev/null | grep -qE 'https?://apt\.octopus\.com'; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# ===== Add Octopus APT repo (once) =====
+if ! apt_has_octopus; then
+  echo "==> Adding Octopus APT repository…"
+  sudo apt-get update -y
+  sudo apt-get install -y --no-install-recommends gnupg curl ca-certificates apt-transport-https
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://apt.octopus.com/public.key | sudo gpg --dearmor -o /etc/apt/keyrings/octopus.gpg
+  sudo chmod a+r /etc/apt/keyrings/octopus.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/octopus.gpg] https://apt.octopus.com/ stable main" \
+    | sudo tee /etc/apt/sources.list.d/octopus.list >/dev/null
+else
+  echo "==> Octopus APT repository already present. Skipping."
+fi
+
 # ===== Install Tentacle (apt) =====
 if ! command -v tentacle >/dev/null 2>&1; then
   echo "==> Installing Octopus Tentacle for Linux..."
