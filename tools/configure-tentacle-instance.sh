@@ -16,10 +16,10 @@ require_root() {
   fi
 }
 
-if [[ -f "../.env" ]]; then
+if [[ -f ".env" ]]; then
   set -a
   # shellcheck disable=SC1091
-  . ../.env
+  . .env
   set +a
 fi
 
