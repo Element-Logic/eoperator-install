@@ -100,9 +100,14 @@ else
 fi
 
 log "Step 10: Normalizing binary name (creating lowercase symlink if needed)"
-BIN_PATH=$(command -v tentacle || command -v Tentacle || true)
+BIN_PATH="$(command -v tentacle || command -v Tentacle || true)"
 if [ -n "$BIN_PATH" ]; then
   if [ ! -x /usr/local/bin/tentacle ] || [ "$(readlink -f /usr/local/bin/tentacle 2>/dev/null || true)" != "$BIN_PATH" ]; then
     sudo ln -sf "$BIN_PATH" /usr/local/bin/tentacle
     ok "Symlink created: /usr/local/bin/tentacle → $BIN_PATH"
   else
+    ok "Symlink already points to $BIN_PATH"
+  fi
+else
+  fail "No Tentacle binary found to symlink"
+fi
