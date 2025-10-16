@@ -31,8 +31,8 @@ chmod +x install-tentacle.sh
 
 ### 3️⃣ Edit the .env file
 What to change:
-- **OCTOPUS_API_KEY** → Paste your personal API key from Octopus Deploy → User Profile → API keys.
-- **MACHINE_NAME** → Must be unique per machine and follows the naming format: Project number - center name - Environment
+- **OCTOPUS_API_KEY** → Paste your personal API key from Octopus Deploy → My Profile → API keys.
+- **MACHINE_NAME** → Must be unique per machine and follows the naming format: `Project number - center name - Environment`
 
 ```bash
 OCTOPUS_API_KEY="API-PASTE_YOUR_KEY_HERE"
@@ -60,7 +60,7 @@ You can also check the local Tentacle service:
 
 ```bash
 sudo Tentacle list-instances
-sudo systemctl status Tentacle
+sudo systemctl status eOperator-Tentacle
 ```
 
 
